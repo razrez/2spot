@@ -1,24 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:to_spot/main.dart';
 
-/// Flutter code sample for [NavigationBar].
-/*
-void main() => runApp(const NavigationBarApp());
-
-class NavigationBarApp extends StatelessWidget {
-  const NavigationBarApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: const AppNavigation(),
-    );
-  }
-}*/
+import '../pages/collections_list.dart';
+import '../pages/spots_list.dart';
 
 
-/// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ///
 class AppNavigation extends StatefulWidget {
   const AppNavigation({super.key});
 
