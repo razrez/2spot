@@ -65,9 +65,24 @@ class CollectionPage extends StatefulWidget {
 }
 
 class _CollectionPageState extends State<CollectionPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+
+  late final TextEditingController _nameController;
+  late final GlobalKey<FormState> _formKey;
+  late final TextEditingController _descriptionController;
+
+  @override void initState() {
+    super.initState();
+    _nameController = TextEditingController();
+    _formKey = GlobalKey<FormState>();
+    _descriptionController = TextEditingController();
+  }
+
+  @override void dispose() {
+    super.dispose();
+    _nameController.dispose();
+    _formKey.currentState?.dispose();
+    _descriptionController.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

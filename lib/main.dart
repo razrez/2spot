@@ -20,6 +20,7 @@ void main() async {
           '(collection_id INTEGER NOT NULL,spot_id INTEGER NOT NULL,PRIMARY KEY (collection_id, spot_id),'
           'FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE,'
           'FOREIGN KEY (spot_id) REFERENCES spots(id) ON DELETE CASCADE)');
+      await db.execute('INSERT INTO spot_collections (collection_id, spot_id) VALUES (1, 1);');
     },
     version: 1,
   );

@@ -1,3 +1,4 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -12,25 +13,26 @@ class LocalDBRepository with ChangeNotifier{
   final Database db;
 
   List<Collection> _collections = [];
-  List<Spot> _spots = [];
+  List<Spot> _allSpots = [];
 
   List<Collection> get collections => _collections;
-  List<Spot> get spots => _spots;
+  List<Spot> get spots => _allSpots;
 
   Future<void> _loadData() async {
     final collectionsData = await db.query('collections');
     _collections = collectionsData.map((e) => Collection.fromMap(e)).toList();
 
     final spotsData = await db.query('spots');
-    _spots = spotsData.map((e) => Spot.fromMap(e)).toList();
+    _allSpots = spotsData.map((e) => Spot.fromMap(e)).toList();
 
-    /// TODO(инит списка спотов для каждой подборки)
-    // for (final collection in _collections){
-    //   /// db.query('table', columns: ['group'], where: '"group" = ?', whereArgs: ['my_group']);
-    //   /// select id from 'spot_collections' where colle
-    //   final spotsOfCollectionData = await db.rawQuery('');
-    //   collection.spots.addAll(spotsOfCollectionData.map((e) => Spot.fromMap(e)).toList());
-    // }
+    for (final collection in _collections){
+      final idsOfSpotsCollection = await db
+          .rawQuery('SELECT spot_collections.spot_id FROM spot_collections '
+          'WHERE collection_id = ${collection.id}');
+
+      var ids = idsOfSpotsCollection.map((map) => { map['spot_id'] as int}).toList();
+      collection.spots.addAll(_allSpots.where((spot) => ids.contains(spot.id)));
+    }
 
     notifyListeners();
   }
@@ -38,7 +40,7 @@ class LocalDBRepository with ChangeNotifier{
   Future<void> addSpot(Spot spot) async {
     final id = await db.insert('spots', spot.toMap());
     spot.id = id;
-    _spots.add(spot);
+    _allSpots.add(spot);
     notifyListeners();
   }
 
@@ -49,7 +51,7 @@ class LocalDBRepository with ChangeNotifier{
       whereArgs: [spot.id],
     );
 
-    _spots.remove(spot);
+    _allSpots.remove(spot);
     notifyListeners();
   }
 
@@ -63,8 +65,8 @@ class LocalDBRepository with ChangeNotifier{
 
   Future<void> removeCollection(Collection collection) async {
     await db.delete(
-      'collections',
       where: 'id = ?',
+      'collections',
       whereArgs: [collection.id],
     );
 
@@ -95,6 +97,20 @@ class LocalDBRepository with ChangeNotifier{
 
     final collection = _collections.firstWhere((c) => c.id == collectionId);
     collection.spots.remove(spot);
+    notifyListeners();
+  }
+
+  Future<void> updateSpot(Spot updatedSpot) async {
+    await db.update(
+      'spots', updatedSpot.toMap(),
+      where: 'id = ?',
+      whereArgs: [updatedSpot.id],
+    );
+
+    final oldSpotVersion = _allSpots.firstWhere((c) => c.id == updatedSpot.id);
+    _allSpots.remove(oldSpotVersion);
+
+    _allSpots.add(updatedSpot);
     notifyListeners();
   }
 
