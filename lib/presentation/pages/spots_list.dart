@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:to_spot/domain/entity/collection.dart';
 
 import '../../data/local_repository_impl.dart';
 import '../../domain/entity/spot.dart';
@@ -27,7 +26,10 @@ class SpotsListPage extends StatelessWidget {
                 icon: const Icon(Icons.delete),
                 onPressed: () => dbContext.removeSpot(spot),
               ),
-              onLongPress: () => const SpotPage(),
+              onLongPress: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EditSpotPage(spot: spot)),
+              ),
             );
           },
         ),
@@ -45,9 +47,9 @@ class SpotsListPage extends StatelessWidget {
 }
 
 class EditSpotPage extends StatefulWidget {
-  final int id;
+  final Spot spot;
 
-  const EditSpotPage({super.key, required this.id});
+  const EditSpotPage({super.key, required this.spot});
 
   @override
   State<EditSpotPage> createState() => _EditSpotPageState();
@@ -58,15 +60,23 @@ class _EditSpotPageState extends State<EditSpotPage>{
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _nameController;
   late final TextEditingController _coordinatesController;
-  late final List<Collection> _spotInCollections;
+  //late final List<Collection> _spotInCollections;
+
+  @override void initState() {
+    _nameController = TextEditingController(text: widget.spot.name);
+    _formKey = GlobalKey<FormState>();
+    _coordinatesController = TextEditingController(text: widget.spot.coordinates);
+    //_spot =  Provider.of<LocalDBRepository>(context,listen: false).spots[widget.id];
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Spot'),
+        title: const Text('Spot Page'),
       ),
-      body:Consumer<LocalDBRepository>(
+      body: Consumer<LocalDBRepository>(
         builder: (context, dbContext, child) => Form(
           key: _formKey,
           child: Padding(
@@ -82,7 +92,6 @@ class _EditSpotPageState extends State<EditSpotPage>{
                     }
                     return null;
                   },
-                  initialValue: dbContext.spots[widget.id].toString(),
                 ),
                 TextFormField(
                   controller: _coordinatesController,
@@ -93,17 +102,16 @@ class _EditSpotPageState extends State<EditSpotPage>{
                     }
                     return null;
                   },
-                  initialValue: dbContext.spots[widget.id].coordinates,
                 ),
                 ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       final name = _nameController.text;
                       final coordinates = _coordinatesController.text;
-                      // Provider.of<LocalDBRepository>(context,listen: false).updateSpot(
-                      //   Spot(id: widget.id, name: name, coordinates: coordinates),
-                      // );
-                      // Navigator.pop(context);
+                      Provider.of<LocalDBRepository>(context,listen: false).updateSpot(
+                        Spot(id: widget.spot.id, name: name, coordinates: coordinates),
+                      );
+                      Navigator.pop(context);
                     }
                   },
                   child: const Text('Save'),
@@ -119,6 +127,7 @@ class _EditSpotPageState extends State<EditSpotPage>{
   @override
   void dispose() {
     _nameController.dispose();
+    _coordinatesController.dispose();
     super.dispose();
   }
 }
