@@ -10,37 +10,26 @@ class CollectionsListPage extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
 
-    // data load
-    //Provider.of<Collections>(context, listen: false).loadData();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Your Spots'),
+        title: const Text('Your Collections'),
       ),
       body: Consumer<LocalDBRepository>(
         builder: (context, dbContext, child) => ListView.builder(
           itemCount: dbContext.collections.length,
           itemBuilder: (context, index) {
             final collection = dbContext.collections[index];
-            return Column(
-              children: [
-                ListTile(
-                  title: Text(collection.name),
-                  subtitle: Text(collection.description),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => dbContext.removeCollection(collection),
-                  ),
-                ),
-                Column(
-                  children: collection.spots.map((spot) {
-                    return ListTile(
-                      title: Text(spot.name),
-                      subtitle: Text(spot.coordinates),
-                    );
-                  }).toList(),
-                ),
-              ],
+            return ListTile(
+              title: Text(collection.name),
+              subtitle: Text(collection.description),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => dbContext.removeCollection(collection),
+              ),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => EditCollectionPage(collection: collection)),
+              ),
             );
           },
         ),
@@ -50,13 +39,14 @@ class CollectionsListPage extends StatelessWidget{
           context,
           MaterialPageRoute(builder: (context) => const CollectionPage()),
         ),
-        tooltip: 'Add Spot',
+        tooltip: 'Add Collection',
         child: const Icon(Icons.add),
       ),
     );
   }
 }
 
+/// Page to create a new collection
 class CollectionPage extends StatefulWidget {
   const CollectionPage({super.key});
 
@@ -134,5 +124,88 @@ class _CollectionPageState extends State<CollectionPage> {
         ),
       ),
     );
+  }
+}
+
+/// Page to edit existent Collection
+class EditCollectionPage extends StatefulWidget {
+  final Collection collection;
+
+  const EditCollectionPage({super.key, required this.collection});
+
+  @override
+  State<EditCollectionPage> createState() => _EditCollectionPageState();
+
+}
+
+class _EditCollectionPageState extends State<EditCollectionPage>{
+  late final GlobalKey<FormState> _formKey;
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+
+  @override void initState() {
+    _nameController = TextEditingController(text: widget.collection.name);
+    _formKey = GlobalKey<FormState>();
+    _descriptionController = TextEditingController(text: widget.collection.description);
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('Collection Page'),
+        ),
+        body: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Collection Name'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a Collection name';
+                    }
+                    return null;
+                  },
+                ),
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter description';
+                    }
+                    return null;
+                  },
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      final name = _nameController.text;
+                      final description = _descriptionController.text;
+                      Provider.of<LocalDBRepository>(context,listen: false).updateCollectionInfo(
+                        Collection(id: widget.collection.id, name: name, description: description),
+                      );
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            ),
+          ),
+        ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 }
