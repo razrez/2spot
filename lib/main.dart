@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:to_spot/data/location_service.dart';
 import 'package:to_spot/presentation/components/app_navbar.dart';
 import 'data/local_repository_impl.dart';
 
@@ -29,6 +30,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => LocalDBRepository(db: db)),
+        Provider<LocationService>(create: (context) => LocationService()),
       ],
       child: const MyApp(),
     ),

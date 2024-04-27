@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:to_spot/domain/entity/collection.dart';
 
 import '../../data/local_repository_impl.dart';
+import '../../data/location_service.dart';
 import '../../domain/entity/spot.dart';
-import 'collections_list.dart';
 
 class SpotsListPage extends StatelessWidget {
   const SpotsListPage({super.key});
@@ -60,15 +60,30 @@ class _SpotPageState extends State<SpotPage> {
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _nameController;
   late final TextEditingController _coordinatesController;
+  late final LocationService _locationController;
 
-  final List<String> _selectedLocations = [];
-  final List<String> _locations = ['Location 1', "Location 2", 'Location 3', 'Location 4'];
+  Future<void> _getInitialLocation() async {
+    var hasPermission = await _locationController.checkPermission();
+    if (!hasPermission) {
+      hasPermission = await _locationController.requestPermission();
+    }
+
+    // in case of failure will be returned geolocation of Kazan city
+    final position = await _locationController.getCurrentLocation();
+    setState(() {
+      _coordinatesController.text = '${position.lat}, ${position.long}';
+    });
+
+  }
+
 
   @override void initState() {
-    super.initState();
+    _locationController = Provider.of<LocationService>(context,listen: false);
     _nameController = TextEditingController();
     _formKey = GlobalKey<FormState>();
-    _coordinatesController = TextEditingController();
+    _coordinatesController = TextEditingController(text: 'getting current location...');
+    _getInitialLocation();
+    super.initState();
   }
 
   @override void dispose() {
