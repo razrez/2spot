@@ -13,20 +13,6 @@ abstract class AppLocation {
 class LocationService implements AppLocation{
   final defLocation = const KazanLocation();
 
-  // Future<void> checkPermission() async {
-  //   LocationPermission permission = await Geolocator.checkPermission();
-  //
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //
-  //     if (permission == LocationPermission.denied) {
-  //       // Handle the case where the user denied the permission
-  //       return;
-  //     }
-  //   }
-  // }
-
-
   @override
   Future<AppLatLong> getCurrentLocation() async {
     return Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium).then((value) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:to_spot/data/dto/spot_of_collection.dart';
 import 'package:to_spot/domain/entity/collection.dart';
 
 import '../../data/local_repository_impl.dart';
@@ -166,31 +167,19 @@ class _EditSpotPageState extends State<EditSpotPage>{
   late final GlobalKey<FormState> _formKey;
   late final TextEditingController _nameController;
   late final TextEditingController _coordinatesController;
+  late final TextEditingController _collectionController;
 
-  late final List<Collection> spotCollections;
-  late final List<Collection> notSpotCollections;
+  late final List<SpotOfCollectionId> spotsOfCollections;
   Collection? selectedCollection;
-  String textInfo = "Please select a collection";
 
-  late final TextEditingController collectionController;
+  String textInfo = "Please select a collection";
 
   @override void initState() {
     _nameController = TextEditingController(text: widget.spot.name);
     _formKey = GlobalKey<FormState>();
     _coordinatesController = TextEditingController(text: widget.spot.coordinates);
-    collectionController = TextEditingController();
-
-    spotCollections = Provider
-        .of<LocalDBRepository>(context, listen: false)
-        .collections
-        .where((collection) => collection.spots.contains(widget.spot))
-        .toList();
-
-    notSpotCollections  = Provider
-        .of<LocalDBRepository>(context, listen: false)
-        .collections
-        .where((collection) => !collection.spots.contains(widget.spot))
-        .toList();
+    _collectionController = TextEditingController();
+    spotsOfCollections = Provider.of<LocalDBRepository>(context, listen: false).spotsOfCollections;
 
     super.initState();
   }
@@ -282,7 +271,7 @@ class _EditSpotPageState extends State<EditSpotPage>{
                   Consumer<LocalDBRepository>(
                     builder: (context, dbContext, child) =>
                       DropdownMenu<Collection>(
-                        controller: collectionController,
+                        controller: _collectionController,
                         enableFilter: true,
                         requestFocusOnTap: true,
                         leadingIcon: const Icon(Icons.search),
@@ -293,40 +282,47 @@ class _EditSpotPageState extends State<EditSpotPage>{
                         ),
 
                         dropdownMenuEntries:
-                          dbContext.collections.map<DropdownMenuEntry<Collection>>(
-                                (Collection collection) {
-                              if (collection.spots.contains(widget.spot)) {
-                                return DropdownMenuEntry<Collection>(
-                                  value: collection,
-                                  label: collection.name,
-                                  leadingIcon: const Icon(Icons.favorite),
-                                );
-                              }
-                              else {
-                                return DropdownMenuEntry<Collection>(
-                                  value: collection,
-                                  label: collection.name,
-                                  leadingIcon: const Icon(Icons.favorite_border),
-                                );
-                              }
-                            },
-                          ).toList(),
+                          dbContext.collections.map<DropdownMenuEntry<Collection>>((Collection collection)
+                          {
+                            //spotsOfCollections.firstWhere((sc) => sc.collectionId == collection.id!  && sc.spotId == widget.spot.id!) != null
+                            if ( spotsOfCollections.indexWhere((element) => element.collectionId == collection.id! && element.spotId == widget.spot.id!) != -1) {
+                              return DropdownMenuEntry<Collection>(
+                                value: collection,
+                                label: collection.name,
+                                leadingIcon: const Icon(Icons.favorite, color: Colors.red,),
+                              );
+                            }
+
+                            else {
+                              return DropdownMenuEntry<Collection>(
+                                value: collection,
+                                label: collection.name,
+                                leadingIcon: const Icon(Icons.favorite_border),
+                              );
+                            }
+                          }).toList(),
 
                         onSelected: (Collection? collection) {
-                          if (collection != null && !collection.spots.contains(widget.spot)){
+                          var elementIndex = spotsOfCollections.indexWhere((element) => element.collectionId == collection?.id! && element.spotId == widget.spot.id!);
+                          if (collection != null
+                              && elementIndex == -1)
+                          {
                             setState(() {
                               selectedCollection = collection;
                               textInfo = '"${widget.spot.name}" added to "${selectedCollection?.name}" collection';
+                              spotsOfCollections.add(SpotOfCollectionId(collectionId: collection.id!, spotId: widget.spot.id!));
                             });
 
                             Provider.of<LocalDBRepository>(context, listen: false)
                                 .addSpotToCollection(collection, widget.spot);
                           }
 
-                          else if (collection != null && collection.spots.contains(widget.spot)) {
+                          else if (collection != null)
+                          {
                             setState(() {
                               selectedCollection = collection;
                               textInfo = '"${widget.spot.name}" removed from "${selectedCollection?.name}" collection';
+                              spotsOfCollections.removeAt(elementIndex);
                             });
 
                             Provider.of<LocalDBRepository>(context, listen: false)
@@ -358,7 +354,7 @@ class _EditSpotPageState extends State<EditSpotPage>{
   void dispose() {
     _nameController.dispose();
     _coordinatesController.dispose();
-    collectionController.dispose();
+    _collectionController.dispose();
     super.dispose();
   }
 }

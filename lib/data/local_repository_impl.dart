@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:to_spot/data/dto/spot_of_collection.dart';
 
 import '../domain/entity/collection.dart';
 import '../domain/entity/spot.dart';
@@ -13,9 +14,11 @@ class LocalDBRepository with ChangeNotifier{
 
   List<Collection> _collections = [];
   List<Spot> _allSpots = [];
+  List<SpotOfCollectionId> _spotsOfCollections = [];
 
   List<Collection> get collections => _collections;
   List<Spot> get spots => _allSpots;
+  List<SpotOfCollectionId> get spotsOfCollections => _spotsOfCollections;
 
   Future<void> _loadData() async {
     final collectionsData = await db.query('collections');
@@ -24,15 +27,9 @@ class LocalDBRepository with ChangeNotifier{
     final spotsData = await db.query('spots');
     _allSpots = spotsData.map((e) => Spot.fromMap(e)).toList();
 
-    for (final collection in _collections){
-      final idsOfSpotsCollection = await db
-          .rawQuery('SELECT spot_collections.spot_id FROM spot_collections '
-          'WHERE collection_id = ${collection.id}');
-
-      var ids = idsOfSpotsCollection.map((map) => { map['spot_id'] as int?? 0}).toList();
-      collection.spots.addAll(_allSpots.where((spot) => spot.id!= null && ids.contains(spot.id)));
-    }
-
+    final spotsOfCollectionsData = await db.query('spot_collections');
+    _spotsOfCollections = spotsOfCollectionsData.map((e) => SpotOfCollectionId.fromMap(e)).toList();
+    print(_spotsOfCollections.length);
     notifyListeners();
   }
 
@@ -74,33 +71,33 @@ class LocalDBRepository with ChangeNotifier{
   }
 
   Future<void> addSpotToCollection(Collection selectedCollection, Spot spot) async {
-    await db.insert(
+    final res = await db.insert(
       'spot_collections',
       {
         'collection_id': selectedCollection.id,
         'spot_id': spot.id
       },
     );
+    print("addSpotToCollection result: ${res}"); // 0 - an error code
 
-    final index = _collections.indexWhere((c) => c.id == selectedCollection.id);
-    if (index!= -1) {
-      _collections[index].spots.add(spot);
-    }
+    _spotsOfCollections.add(
+        SpotOfCollectionId(collectionId: selectedCollection.id!, spotId: spot.id!)
+    );
 
     notifyListeners();
   }
 
   Future<void> removeSpotFromCollection(Collection collectionRemove, Spot spot) async {
-    await db.delete(
+    final res = await db.delete(
       'spot_collections',
-      where: 'collectionId = ? AND spotId = ?',
+      where: 'collection_id = ? AND spot_id = ?',
       whereArgs: [collectionRemove.id, spot.id],
     );
+    print("removeSpotFromCollection result: ${res}");
 
-    final index = _collections.indexWhere((c) => c.id == collectionRemove.id);
-    if (index!= -1) {
-      _collections[index].spots.remove(spot);
-    }
+    _spotsOfCollections.remove(
+        SpotOfCollectionId(collectionId: collectionRemove.id!, spotId: spot.id!)
+    );
 
     notifyListeners();
   }
