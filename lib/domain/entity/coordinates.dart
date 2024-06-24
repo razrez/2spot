@@ -21,3 +21,13 @@ class KazanLocation extends AppLatLong {
     super.long = 49.12214,
   });
 }
+
+class MapPoint {
+  final String name;
+  final AppLatLong location;
+
+  const MapPoint({
+    required this.name,
+    required this.location,
+  });
+}
