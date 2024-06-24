@@ -13,9 +13,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final db = await openDatabase(
-    join(await getDatabasesPath(), 'app2Spot.db'),
+    join(await getDatabasesPath(), 'new2Spot.db'),
     onCreate: (db, version) async {
-      await db.execute('CREATE TABLE IF NOT EXISTS spots(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, coordinates TEXT NOT NULL)');
+      await db.execute('CREATE TABLE IF NOT EXISTS spots(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, coordinates TEXT NOT NULL, image BLOB)');
       await db.execute('CREATE TABLE IF NOT EXISTS collections(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT)');
       await db.execute('CREATE TABLE IF NOT EXISTS spot_collections'
           '(collection_id INTEGER NOT NULL,spot_id INTEGER NOT NULL,PRIMARY KEY (collection_id, spot_id),'
